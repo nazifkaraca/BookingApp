@@ -1,11 +1,16 @@
 
 using BookingApp.Business.DataProtection;
+using BookingApp.Business.Operations.Feature;
 using BookingApp.Business.Operations.User;
 using BookingApp.Data.Context;
 using BookingApp.Data.Repositories;
 using BookingApp.Data.UnitOfWork;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Text;
 
 namespace BookingApp.WebApi
 {
@@ -20,7 +25,31 @@ namespace BookingApp.WebApi
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                var jwtSecurityScheme = new OpenApiSecurityScheme
+                {
+                    Scheme = "Bearer",
+                    BearerFormat = "JWT",
+                    Name = "Jwt Authentication",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.Http,
+                    Description = "Put **_ONLY_** your JWT Bearer Token on Textbox below!",
+
+                    Reference = new OpenApiReference
+                    {
+                        Id = JwtBearerDefaults.AuthenticationScheme,
+                        Type = ReferenceType.SecurityScheme
+                    }
+                };
+
+                options.AddSecurityDefinition(jwtSecurityScheme.Reference.Id, jwtSecurityScheme);
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    { jwtSecurityScheme, Array.Empty<string>() }
+                });
+            });
 
             builder.Services.AddScoped<IDataProtection, DataProtection>();
 
@@ -29,6 +58,26 @@ namespace BookingApp.WebApi
             builder.Services.AddDataProtection()
                 .SetApplicationName("BookingApp")
                 .PersistKeysToFileSystem(keysDirectory);
+
+
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+
+                        ValidateAudience = true,
+                        ValidAudience = builder.Configuration["Jwt:Audience"],
+
+                        ValidateLifetime = true,
+
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"]!))
+
+                    };
+                });
+
 
             var connectionString = builder.Configuration.GetConnectionString("Default");
 
@@ -41,6 +90,9 @@ namespace BookingApp.WebApi
 
             builder.Services.AddScoped<IUserService, UserManager>();
 
+            builder.Services.AddScoped<IFeatureService, FeatureManager>();
+
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -52,6 +104,7 @@ namespace BookingApp.WebApi
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
 

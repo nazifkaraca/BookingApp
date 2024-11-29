@@ -1,6 +1,8 @@
 ﻿using BookingApp.Business.Operations.User;
 using BookingApp.Business.Operations.User.Dtos;
+using BookingApp.WebApi.Jwt;
 using BookingApp.WebApi.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -59,7 +61,38 @@ namespace BookingApp.WebApi.Controllers
             }
 
             // Bilgiler doğru ise --> JWT
+            var user = result.Data;
+
+            var configuration = HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+
+            var token = JwtHelper.GenerateJwtToken(new JwtDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                UserType = user.UserType,
+                SecretKey = configuration["Jwt:SecretKey"]!,
+                Issuer = configuration["Jwt:Issuer"]!,
+                Audience = configuration["Jwt:Audience"]!,
+                ExpireMinutes = int.Parse(configuration["Jwt:ExpireMinutes"]!)
+            });
+
+            return Ok(new LoginResponse
+            {
+                Message = "Giriş başarıyla tamamlandı.",
+                Token = token
+            });
         }
+
+        [HttpGet("me")]
+        [Authorize] // token yoksa, cevap yok!
+        public IActionResult GetMyUser()
+        {
+            return Ok();
+        }
+
+
 
     }
 }
