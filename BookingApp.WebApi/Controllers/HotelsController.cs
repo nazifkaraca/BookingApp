@@ -66,5 +66,37 @@ namespace BookingApp.WebApi.Controllers
                 return Ok();
             }
         }
+
+        [HttpPatch("{id}/stars")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AdjustHotelStars(int id, int changeTo)
+        {
+            var result = await _hotelService.AdjustHotelStars(id, changeTo);
+
+            if (!result.IsSucceed)
+            {
+                return NotFound(result.Message);
+            }
+            else
+            {
+                return Ok();
+            }
+        }
+
+        [HttpDelete]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteHotel(int id)
+        {
+            var result = await _hotelService.DeleteHotel(id);
+
+            if (!result.IsSucceed)
+            {
+                return NotFound(result.Message);
+            }
+            else
+            {
+                return Ok();
+            }
+        }
     }
 }
