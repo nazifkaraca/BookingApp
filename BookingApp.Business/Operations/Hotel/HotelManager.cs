@@ -4,6 +4,7 @@ using BookingApp.Data.Entities;
 using BookingApp.Data.Repositories;
 using BookingApp.Data.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,7 +30,7 @@ namespace BookingApp.Business.Operations.Hotel
         {
             var hasHotel = _hotelRepository.GetAll(x => x.Name.ToLower() == hotel.Name.ToLower()).Any();
 
-            if (hasHotel) 
+            if (hasHotel)
             {
                 return new ServiceMessage
                 {
@@ -103,7 +104,7 @@ namespace BookingApp.Business.Operations.Hotel
             }
 
             hotel.Stars = changeTo;
-            
+
             _hotelRepository.Update(hotel);
 
             try
@@ -191,6 +192,74 @@ namespace BookingApp.Business.Operations.Hotel
                 }).ToListAsync();
 
             return hotels;
+        }
+
+        public async Task<ServiceMessage> UpdateHotel(UpdateHotelDto hotel)
+        {
+            var hotelEntity = _hotelRepository.GetById(hotel.Id);
+
+            if (hotelEntity == null)
+            {
+                return new ServiceMessage
+                {
+                    IsSucceed = false,
+                    Message = "Otel bulunamadı."
+                };
+            }
+
+            await _unitOfWork.BeginTransaction();
+
+            hotelEntity.Name = hotel.Name;
+            hotelEntity.Stars = hotel.Stars;
+            hotelEntity.Location = hotel.Location;
+            hotelEntity.AccomodationType = hotel.AccomodationType;
+
+            _hotelRepository.Update(hotelEntity);
+
+            try
+            {
+                await _unitOfWork.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollBackTransaction();
+                throw new Exception("Otel bilgileri güncellenirken bir hata ile karşılaşıldı.");
+            }
+
+            var hotelFeatures = _hotelFeatureRepository.GetAll(x => x.HotelId == x.HotelId).ToList();
+
+            foreach (var hotelFeature in hotelFeatures)
+            {
+                _hotelFeatureRepository.Delete(hotelFeature, false);
+            }
+
+            foreach (var featureId in hotel.FeatureIds)
+            {
+                var hotelFeature = new HotelFeatureEntity
+                {
+                    HotelId = hotelEntity.Id,
+                    FeatureId = featureId,
+                };
+
+                _hotelFeatureRepository.Add(hotelFeature);
+            }
+
+            try
+            {
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransaction();
+            }
+            catch (Exception)
+            {
+                await _unitOfWork.RollBackTransaction();
+                throw new Exception("Otel bilgileri güncellenirken bir hata oluştu. İşlemler geriye alınıyor.");
+            }
+
+            return new ServiceMessage
+            {
+                IsSucceed = true,
+            };
+
         }
     }
 }

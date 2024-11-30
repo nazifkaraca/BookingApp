@@ -4,6 +4,7 @@ using BookingApp.WebApi.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
 namespace BookingApp.WebApi.Controllers
 {
@@ -98,5 +99,32 @@ namespace BookingApp.WebApi.Controllers
                 return Ok();
             }
         }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateHotel(int id, UpdateHotelRequest request)
+        {
+            var updateHotelDto = new UpdateHotelDto
+            {
+                Id = id,
+                Name = request.Name,
+                Stars = request.Stars,
+                Location = request.Location,
+                AccomodationType = request.AccomodationType,
+                FeatureIds = request.FeatureIds,
+            };
+
+            var result = await _hotelService.UpdateHotel(updateHotelDto);
+
+            if (!result.IsSucceed)
+            {
+                return NotFound(result.Message);
+            }
+            else
+            {
+                return await GetHotel(id);
+            }
+        }
+
     }
 }
