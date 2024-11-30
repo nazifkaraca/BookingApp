@@ -1,4 +1,5 @@
 ﻿using BookingApp.Business.Operations.Setting;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +17,7 @@ namespace BookingApp.WebApi.Controllers
         }
 
         [HttpPatch]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ToggleMaintenance()
         {
             await _settingService.ToggleMaintenance();

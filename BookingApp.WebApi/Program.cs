@@ -7,6 +7,7 @@ using BookingApp.Business.Operations.User;
 using BookingApp.Data.Context;
 using BookingApp.Data.Repositories;
 using BookingApp.Data.UnitOfWork;
+using BookingApp.WebApi.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -99,7 +100,6 @@ namespace BookingApp.WebApi
 
             builder.Services.AddScoped<ISettingService, SettingManager>();
 
-
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -108,6 +108,8 @@ namespace BookingApp.WebApi
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+            app.UseMaintenanceMode();
 
             app.UseHttpsRedirection();
 
