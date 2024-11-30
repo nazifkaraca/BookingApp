@@ -15,4 +15,8 @@
     <ProjectReference Include="..\BookingApp.Data\BookingApp.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Operations\Setting\Dto\" />
+  </ItemGroup>
+
 </Project>
