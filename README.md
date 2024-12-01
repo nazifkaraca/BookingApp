@@ -2,6 +2,10 @@
 
 BookingApp is a hotel reservation system developed using a layered architecture, comprising Business, Data, and WebAPI layers. This design ensures modularity, maintainability, and scalability, facilitating efficient management of hotel bookings and related operations.
 
+![image](https://github.com/user-attachments/assets/84749e85-08c8-4c53-98a2-27d15074c37a)
+
+---
+
 ## Features
 
 - **User Registration and Authentication**: Secure user sign-up and login functionalities.
